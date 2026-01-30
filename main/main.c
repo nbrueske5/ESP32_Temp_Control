@@ -34,6 +34,9 @@
 
 #define LCD_BK_LIGHT_ON_LEVEL   1
 #define PARALLEL_LINES 16
+
+#define BG_COLOR 0x0000
+
 // LCD size
 #define LCD_WIDTH  320
 #define LCD_HEIGHT 240
@@ -64,7 +67,7 @@ void init_lcd(void) {
     esp_lcd_panel_io_spi_config_t io_config = {
     .dc_gpio_num = PIN_NUM_DC,
     .cs_gpio_num = PIN_NUM_CS,
-    .pclk_hz = 20*1000*1000, //Clock out at 20 MHz
+    .pclk_hz = 10*1000*1000, //Clock out at 10 MHz
     .lcd_cmd_bits = 8,
     .lcd_param_bits = 8,
     .spi_mode = 0,
@@ -85,6 +88,7 @@ void init_lcd(void) {
     esp_lcd_panel_init(panel_handle);
 
     esp_lcd_panel_swap_xy(panel_handle, true); // fix orientation
+    //esp_lcd_panel_invert_color(panel_handle, true); // fix color
 
     esp_lcd_panel_disp_on_off(panel_handle, true);
 
@@ -101,18 +105,17 @@ void init_lcd(void) {
     gpio_set_level(PIN_NUM_BCKL, LCD_BK_LIGHT_ON_LEVEL);
 }
 
-void fill_screen(void *color)
+void fill_screen(uint16_t color)
 {
-    uint32_t line_buffer[LCD_HEIGHT];
+    uint16_t line_buffer[LCD_HEIGHT];
     for (int i = 0; i < LCD_HEIGHT; i++) {
-        line_buffer[i] = (uint32_t)color;
-
+        line_buffer[i] = color;
     }
 
     for (int i = 0; i < LCD_WIDTH; i++) {
         esp_lcd_panel_draw_bitmap(panel_handle, i, 0, i+1, LCD_HEIGHT, line_buffer);
+        vTaskDelay(pdMS_TO_TICKS(2));
     }
-    vTaskDelete(NULL);
 }
 
 void draw_seven_seg(int size, int x_pos, int y_pos, uint16_t color, bool *data) {
@@ -186,12 +189,50 @@ void draw_seven_seg(int size, int x_pos, int y_pos, uint16_t color, bool *data) 
                 line_buffer);
         }
     }
-    
-    
+}
+
+void draw(int scale, int width, int height, int x_pos, int y_pos, uint16_t color, bool *data) {
+    uint16_t line_buffer[width*scale];
+    // loop through each row, adding the scaled data to the buffer and draw it out
+    for (int currRow = 0; currRow < height; currRow++) {
+        // create the scaled line buffer for the current row 
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < scale; j++) {
+                if (data[currRow*width + i]) {
+                    line_buffer[i*scale + j] = color;
+                } else {
+                    line_buffer[i*scale + j] = BG_COLOR;
+                }
+            }
+        }
+        // draw the scaled line buffer to the screen -> also scale in y direction by simply redrawing the line scale times downward 
+        for (int j = 0; j < scale; j++) {
+            esp_lcd_panel_draw_bitmap(panel_handle, x_pos, y_pos + currRow*scale + j, x_pos + width*scale, y_pos + currRow*scale + j + 1, line_buffer);
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
+    }
 }
 
 void app_main(void)
 {
     init_lcd();
-    draw_seven_seg(5, 10, 10, 0x0, (bool[]){1,1,1,1,1,1,1}); //Display 0
+    fill_screen(BG_COLOR);
+    /*
+    draw(20, 8, 8, 20, 20, 0x04df, (bool[]){
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 1, 0, 0, 0, 0,
+        0, 1, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0,
+        0, 1, 1, 1, 1, 0, 0, 0
+    });
+    */
+   draw(70, 4, 3, 20, 15, 0x04df, (bool[]){
+        1, 1, 1, 1,
+        1, 1, 1, 1,
+        1, 1, 1, 1
+   });
+
 }
