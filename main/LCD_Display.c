@@ -207,7 +207,7 @@ void draw_pixel_map(int scale, int x_pos, int y_pos, int width, int height, uint
         // draw the scaled line buffer to the screen -> also scale in y direction by simply redrawing the line scale times downward 
         for (int j = 0; j < scale; j++) {
             esp_lcd_panel_draw_bitmap(panel_handle, x_pos, y_pos + currRow*scale + j, x_pos + width*scale, y_pos + currRow*scale + j + 1, line_buffer);
-            vTaskDelay(pdMS_TO_TICKS(30));
+            vTaskDelay(pdMS_TO_TICKS(1));
         }
     }
 }
@@ -252,17 +252,19 @@ void draw_string_3x5(int scale, int x_pos, int y_pos, int array_size, uint16_t c
             case '9':
                 char_data = preset_9_3x5;
                 break;
+            case ':':
+                char_data = preset_colon_3x5;
+                break;
+            case '.':
+                char_data = preset_period_3x5;
+                break;
+            case ' ':
+                char_data = preset_blank_3x5;
+                break;
         }
         // draw the preset to the screen, add offset between numbers (not on first)
         draw_pixel_map(scale, x_pos + i*scale + offset*i, y_pos, 3, 5, color, char_data);
         offset = 3*scale;
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-}
-void app_main(void)
-{
-    init_lcd();
-    fill_screen(BG_COLOR);
-    char *string = "67";
-    draw_string_3x5(40, 10, 10, 4, 0x4198, string);
 }
