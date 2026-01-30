@@ -1,9 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: CC0-1.0
- */
-
 #include <stdio.h>
 #include <inttypes.h>
 #include "sdkconfig.h"
@@ -17,6 +11,8 @@
 #include "esp_lcd_panel_st7789.h"
 #include "esp_lcd_panel_ops.h"
 #include "driver/gpio.h"
+#include "Pixel_Array_Presets.h"
+#include <esp_log.h>
 
 /**
  * SPI LCD to ESP32 Inputs
@@ -44,8 +40,11 @@
 #define SEVEN_SEG_THICK 1
 #define SEVEN_SEG_LENGTH 5
 
+const char *TAG = "DISPLAY";
+
 //TASKS
 TaskHandle_t fill_screen_hdl = NULL;
+
 
 esp_lcd_panel_handle_t panel_handle = NULL;
 
@@ -118,7 +117,7 @@ void fill_screen(uint16_t color)
     }
 }
 
-void draw_seven_seg(int size, int x_pos, int y_pos, uint16_t color, bool *data) {
+void draw_seven_seg(int size, int x_pos, int y_pos, uint16_t color, uint16_t *data) {
     int segm_length = SEVEN_SEG_LENGTH*size;
     int segm_thickness = SEVEN_SEG_THICK*size;
     // need real size
@@ -191,7 +190,7 @@ void draw_seven_seg(int size, int x_pos, int y_pos, uint16_t color, bool *data) 
     }
 }
 
-void draw(int scale, int width, int height, int x_pos, int y_pos, uint16_t color, bool *data) {
+void draw_pixel_map(int scale, int x_pos, int y_pos, int width, int height, uint16_t color, uint16_t *data) {
     uint16_t line_buffer[width*scale];
     // loop through each row, adding the scaled data to the buffer and draw it out
     for (int currRow = 0; currRow < height; currRow++) {
@@ -208,31 +207,62 @@ void draw(int scale, int width, int height, int x_pos, int y_pos, uint16_t color
         // draw the scaled line buffer to the screen -> also scale in y direction by simply redrawing the line scale times downward 
         for (int j = 0; j < scale; j++) {
             esp_lcd_panel_draw_bitmap(panel_handle, x_pos, y_pos + currRow*scale + j, x_pos + width*scale, y_pos + currRow*scale + j + 1, line_buffer);
-            vTaskDelay(pdMS_TO_TICKS(20));
+            vTaskDelay(pdMS_TO_TICKS(30));
         }
     }
 }
 
+void draw_string_3x5(int scale, int x_pos, int y_pos, int array_size, uint16_t color, char *data) {
+    uint16_t* char_data;
+    char_data = preset_blank_3x5;
+    int offset = 0;
+    for (int i = 0; i < array_size; i++) {
+        if (data[i] == NULL) {
+            return;
+        }
+        // grab the correct preset
+        switch (data[i]) {
+            case '0':
+                char_data = preset_0_3x5;
+                break;
+            case '1':
+                char_data = preset_1_3x5;
+                break;
+            case '2':
+                char_data = preset_2_3x5;
+                break;
+            case '3':
+                char_data = preset_3_3x5;
+                break;
+            case '4':
+                char_data = preset_4_3x5;
+                break;
+            case '5':
+                char_data = preset_5_3x5;
+                break;
+            case '6':
+                char_data = preset_6_3x5;
+                break;
+            case '7':
+                char_data = preset_7_3x5;
+                break;
+            case '8':
+                char_data = preset_8_3x5;
+                break;
+            case '9':
+                char_data = preset_9_3x5;
+                break;
+        }
+        // draw the preset to the screen, add offset between numbers (not on first)
+        draw_pixel_map(scale, x_pos + i*scale + offset*i, y_pos, 3, 5, color, char_data);
+        offset = 3*scale;
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
 void app_main(void)
 {
     init_lcd();
     fill_screen(BG_COLOR);
-    /*
-    draw(20, 8, 8, 20, 20, 0x04df, (bool[]){
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 1, 1, 0, 0, 0, 0,
-        0, 1, 0, 0, 1, 0, 0, 0,
-        0, 0, 0, 0, 1, 0, 0, 0,
-        0, 0, 0, 1, 0, 0, 0, 0,
-        0, 0, 1, 0, 0, 0, 0, 0,
-        0, 1, 0, 0, 0, 0, 0, 0,
-        0, 1, 1, 1, 1, 0, 0, 0
-    });
-    */
-   draw(70, 4, 3, 20, 15, 0x04df, (bool[]){
-        1, 1, 1, 1,
-        1, 1, 1, 1,
-        1, 1, 1, 1
-   });
-
+    char *string = "67";
+    draw_string_3x5(40, 10, 10, 4, 0x4198, string);
 }
