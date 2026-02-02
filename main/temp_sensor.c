@@ -22,8 +22,48 @@ int voltage = 0;
 //todo -> allow user to modify target temp and allowed offset?
 float target_temp = 22.0f; // Target temperature in Celsius
 float temp_offset = 1.0; // Allowed temperature offset in Celsius
+float raw_avg = 0;
+float avg_voltage = 0;
+float curr_temp = 0;
+
+TaskHandle_t readSensor_hdl = NULL;
 
 bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
+
+void readSensorTask(void* param) {
+    for (;;) {
+        // Average out the input
+        raw_avg = 0;
+        avg_voltage = 0;
+
+        for (int i = 0; i < AVG_SAMPLES; i++) {
+            adc_oneshot_read(adc1_handle, ADC1_CHAN, &adc_raw);
+            adc_cali_raw_to_voltage(adc1_cali_chan_handle, adc_raw, &voltage);
+            raw_avg += adc_raw;
+            avg_voltage += voltage;
+            vTaskDelay(pdMS_TO_TICKS(AVG_SAMPLES_SPEED_MS / AVG_SAMPLES));
+        }
+        raw_avg = raw_avg/AVG_SAMPLES;
+        avg_voltage = avg_voltage/AVG_SAMPLES;
+        
+        ESP_LOGI(TAG, "Raw AVERAGE: %.2f", raw_avg);
+        ESP_LOGI(TAG, "VOLTAGE: %.2f", avg_voltage);
+        curr_temp = (avg_voltage - 500) / 10.0; // For TMP36 sensor
+        ESP_LOGI(TAG, "Temp: %.2f C", curr_temp); // For TMP36 sensor  
+    }
+    
+}
+
+void createReadSensorTask() {
+    xTaskCreate (
+        readSensorTask,
+        "Read Sensor",
+        5000,
+        NULL,
+        10,
+        &readSensor_hdl
+    );
+}
 
 void init_temp_sensor(void)
 {

@@ -261,6 +261,9 @@ void draw_string_3x5(int scale, int x_pos, int y_pos, int array_size, uint16_t c
             case ' ':
                 char_data = preset_blank_3x5;
                 break;
+            case 'C':
+                char_data = preset_C_3x5;
+                break;
         }
         // draw the preset to the screen, add offset between numbers (not on first)
         draw_pixel_map(scale, x_pos + i*scale + offset*i, y_pos, 3, 5, color, char_data);
@@ -268,3 +271,7 @@ void draw_string_3x5(int scale, int x_pos, int y_pos, int array_size, uint16_t c
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
+
+void drawTask(void *data) {
+    
+};

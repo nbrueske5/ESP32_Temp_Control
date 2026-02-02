@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c"
+idf_component_register(SRCS "Communication.c" "main.c"
                             "LCD_Display.c"
                             "Pixel_Array_Presets.c"
                             "temp_sensor.c"
@@ -6,4 +6,5 @@ idf_component_register(SRCS "main.c"
                        REQUIRES driver
                        REQUIRES esp_lcd
                        REQUIRES esp_adc
+                       REQUIRES esp_wifi
                        INCLUDE_DIRS "")

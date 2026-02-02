@@ -24,3 +24,6 @@ extern uint16_t preset_7_3x5[15];
 extern uint16_t preset_8_3x5[15];
 extern uint16_t preset_9_3x5[15];
 extern uint16_t preset_C_3x5[15];
+
+extern uint16_t preset_fanA_16x16[16*16];
+extern uint16_t preset_fanB_16x16[16*16];

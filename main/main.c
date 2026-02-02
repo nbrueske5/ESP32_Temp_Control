@@ -3,6 +3,9 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include <stdint.h>
+#include "esp_now.h"
+#include "esp_rtc_time.h"
+#include "Pixel_Array_Presets.h"
 
 const static char *TAG = "main";
 #define SCALE 10
@@ -14,44 +17,46 @@ void app_main(void)
     init_temp_sensor();
     init_lcd();
     fill_screen(0x0000);
-    vTaskDelay(100);
+    createReadSensorTask();
 
-    float avg_voltage = 0;
-    float curr_temp = 0;
-    float target_temp = 46.00f;
+
+    float target_temp = 27.00f;
     float temp_offset = 0.20f;
 
-    
+    bool resetTimer = false;
+    bool fanA = true;
+    int startTime = xTaskGetTickCount() * portTICK_PERIOD_MS * 1000;
+
     while (1) {
-        // Average out the input
-        avg_voltage = 0;
-        for (int i = 0; i < AVG_SAMPLES; i++) {
-            ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, ADC1_CHAN, &adc_raw));
-            ESP_ERROR_CHECK(adc_cali_raw_to_voltage(adc1_cali_chan_handle, adc_raw, &voltage));
-            avg_voltage += voltage;
-            vTaskDelay(pdMS_TO_TICKS(AVG_SAMPLES_SPEED_MS / AVG_SAMPLES));
+        if (resetTimer) {
+            ESP_LOGI(TAG, "reset");
+            startTime = xTaskGetTickCount() * portTICK_PERIOD_MS;
+            resetTimer = false;
         }
-        avg_voltage = avg_voltage / AVG_SAMPLES;
-        ESP_LOGI(TAG, "Average Cali voltage: %.2f mV", avg_voltage);
-        curr_temp = (avg_voltage - 543) / 10.0; // For TMP36 sensor
-        ESP_LOGI(TAG, "Temp: %.2f C", curr_temp); // For TMP36 sensor
-        curr_temp = -1*curr_temp; 
-        // format voltage
+        if (xTaskGetTickCount() * portTICK_PERIOD_MS - startTime > 300) {
+            if (fanA) {
+                draw_pixel_map(5, 100, 100, 16, 16, WHITE, preset_fanA_16x16);
+            } else {
+                draw_pixel_map(5, 100, 100, 16, 16, WHITE, preset_fanB_16x16);
+            }
+            fanA = !fanA;
+            resetTimer = true;
+        }
+       // format voltage
         char buffer[10];
-        sprintf(buffer, "%.2f", curr_temp);
-        // too hot
+        sprintf(buffer, "%.2fC", curr_temp);
         if (curr_temp > target_temp + temp_offset) {
-            draw_string_3x5(SCALE, X_POS, Y_POS, 5, RED, buffer);
+            draw_string_3x5(SCALE, X_POS, Y_POS, 6, RED, buffer);
         // too cold
         } else if (curr_temp < target_temp - temp_offset) {
-            draw_string_3x5(SCALE, X_POS, Y_POS, 5, BLUE, buffer);
+            draw_string_3x5(SCALE, X_POS, Y_POS, 6, BLUE, buffer);
         // perfect
         } else {
-            draw_string_3x5(SCALE, X_POS, Y_POS, 5, GREEN, buffer);
+            draw_string_3x5(SCALE, X_POS, Y_POS, 6, GREEN, buffer);
         }
         // give display time to draw
-        vTaskDelay(pdMS_TO_TICKS(10));
-            
+        //vTaskDelay(pdMS_TO_TICKS(10));
+        
     }
 
 }
