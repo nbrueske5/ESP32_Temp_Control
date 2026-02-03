@@ -5,8 +5,8 @@
 #define ADC1_CHAN           ADC_CHANNEL_2
 #define ADC_ATTEN           ADC_ATTEN_DB_11
 
-#define AVG_SAMPLES 64
-#define AVG_SAMPLES_SPEED_MS 2000 // Total delay time for averaging samples
+#define AVG_SAMPLES 128
+#define AVG_SAMPLES_SPEED_MS 4000 // Total delay time for averaging samples
 
 extern adc_cali_handle_t adc1_cali_chan_handle;
 extern adc_oneshot_unit_handle_t adc1_handle;

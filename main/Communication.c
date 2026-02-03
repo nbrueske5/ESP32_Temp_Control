@@ -13,7 +13,7 @@
 #include "esp_mac.h"
 #include "esp_now.h"
 #include "esp_crc.h"
-#include "Communications.h"
+#include "Communication.h"
 
 #define ESPNOW_MAXDELAY 512
 #define ESPNOW_MAGIC 0x12345678
@@ -22,11 +22,10 @@ static const char *TAG = "espnow";
 
 static QueueHandle_t s_espnow_queue = NULL;
 
-static uint8_t s_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-static uint8_t peer_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+static uint8_t peer_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 static uint16_t s_espnow_seq[2] = { 0, 0 };
-#define CHANNEL 6
+#define CHANNEL 1
 
 void espnow_init(void) {
     ESP_LOGI(TAG, "Starting WIFI");
@@ -45,11 +44,12 @@ void espnow_init(void) {
         .ifidx = WIFI_IF_STA,
         .encrypt = false
     };
-    memcpy(peer_info.peer_addr, s_broadcast_mac, ESP_NOW_ETH_ALEN);
+    memcpy(peer_info.peer_addr, peer_mac, ESP_NOW_ETH_ALEN);
     esp_now_add_peer(&peer_info);
 }
 
 void espnow_send_data(bool motorOn) {
+    ESP_LOGI(TAG, "Sent %d", motorOn);
     uint8_t data = motorOn ? 1 : 0;
     esp_now_send(peer_mac, &data, sizeof(data));
 }
