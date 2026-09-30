@@ -16,7 +16,5 @@
     "--compile-commands-dir=c:\\Users\\Noah\\ESP32\\spi_display\\build"
   ],
   "idf.flashType": "UART",
-  "idf.portWin": "COM7",
-  "idf.currentSetup": "C:\\Users\\Noah\\esp\\v5.5.1\\esp-idf",
-  "idf.port": "COM6"
+  "idf.portWin": "COM7"
 }

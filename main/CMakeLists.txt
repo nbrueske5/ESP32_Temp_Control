@@ -1,4 +1,4 @@
-idf_component_register(SRCS "rtos_tasks.c" "Communication.c" "main.c"
+idf_component_register(SRCS "Communication.c" "main.c"
                             "LCD_Display.c"
                             "Pixel_Array_Presets.c"
                             "temp_sensor.c"
@@ -8,5 +8,4 @@ idf_component_register(SRCS "rtos_tasks.c" "Communication.c" "main.c"
                        REQUIRES esp_adc
                        REQUIRES esp_wifi
                        REQUIRES nvs_flash
-                       REQUIRES espressif__esp_tinyusb
                        INCLUDE_DIRS "")
